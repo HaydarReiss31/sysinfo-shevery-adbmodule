@@ -1,0 +1,9 @@
+id=sysinfo
+name=Sys Info
+version=1.0
+versionCode=1
+author=HaydarReiss31
+description=Live system dashboard: CPU, RAM, battery, network, display, storage, OpenGL/Vulkan and disk info
+webui=webui
+action=action.sh
+usesShellBridge=true
