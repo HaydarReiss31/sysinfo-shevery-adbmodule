@@ -1,8 +1,12 @@
-# Sys Info — Shevery ADB Module
+# Sys Info — ADB Module
+
+
 
 ![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)
 
-A lightweight system info dashboard for [Shevery](https://github.com/HmnDev-Tech/shevery) (Shizuku fork). Runs entirely through the Shizuku shell bridge — no root required.
+
+
+A lightweight system info dashboard for Shizuku-based ADB module managers — works with [Shevery](https://github.com/HmnDev-Tech/shevery) and Nightzuku. Runs entirely through the Shizuku shell bridge — no root required.
 
 ## Screenshots
 
@@ -27,7 +31,7 @@ Each tab loads its own data on demand (lazy-loaded), so opening the module doesn
 ## Installation
 
 1. Download the latest release ZIP (or clone this repo and zip `module.prop`, `action.sh`, `webui/`, `banner.png`)
-2. In Shevery: **ADB Modules → Install ZIP**
+2. In Shevery or Nightzuku: **ADB Modules → Install ZIP**
 3. Enable the module
 4. Set access mode to **Full access** (some `dumpsys` calls need it — Safe mode may return partial data)
 5. Open the module card → **WebUI**
