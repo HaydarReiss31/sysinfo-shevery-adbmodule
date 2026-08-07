@@ -6,7 +6,7 @@
 
 
 
-A lightweight system info dashboard for Shizuku-based ADB module managers — works with [Shevery](https://github.com/HmnDev-Tech/shevery) and Nightzuku. Runs entirely through the Shizuku shell bridge — no root required.
+A lightweight system info dashboard for Shizuku-based ADB module managers — works with [Shevery](https://github.com/HmnDev-Tech/shevery) and [Nightzuku.](https://github.com/kerneldroid/Nightzuku/tree/main) Runs entirely through the Shizuku shell bridge — no root required.
 
 ## Screenshots
 
