@@ -7,11 +7,13 @@ A lightweight system info dashboard for Shizuku-based ADB module managers — wo
 
 ## Screenshots
 
-<p align="center">
-  <img src="screenshots/panel.png" width="260" />
-  <img src="screenshots/hardware.png" width="260" />
-  <img src="screenshots/graphics.png" width="260" />
-</p>
+<table>
+<tr>
+<td><img src="screenshots/panel.png" width="120"/></td>
+<td><img src="screenshots/hardware.png" width="120"/></td>
+<td><img src="screenshots/graphics.png" width="120"/></td>
+</tr>
+</table>
 
 ## Features
 
