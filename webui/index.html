@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Sys Info</title>
+<style>
+  :root{
+    --bg:#111318; --bg2:#0c0e12; --card:#1b1e26; --card2:#20242e;
+    --accent:#4fd1c5; --accent2:#7ee8dd; --text:#eef1f6; --sub:#8b93a3; --border:#2a2f3a;
+    --ram:#4fd1c5; --sto:#f0b429; --bat:#8fd97a; --shadow:0 10px 24px -12px rgba(0,0,0,.55);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html{background:var(--bg);min-height:100%;}
+  body{margin:0;padding:0;min-height:100vh;background:radial-gradient(1200px 600px at 50% -10%, #1a2530 0%, var(--bg) 55%);
+    color:var(--text);font-family:-apple-system,Roboto,"Segoe UI",sans-serif;font-size:14px;}
+
+  header{padding:18px 18px 12px;display:flex;align-items:center;justify-content:space-between;}
+  header h1{font-size:21px;margin:0;background:linear-gradient(90deg,var(--accent2),var(--accent));
+    -webkit-background-clip:text;background-clip:text;color:transparent;letter-spacing:.2px;font-weight:800;}
+  header .status{font-size:11px;color:var(--sub);margin-top:2px;display:flex;align-items:center;gap:5px;}
+  header .status .dot{width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 6px var(--accent);
+    transition:background .25s;}
+  header .refresh{background:var(--card2);border:1px solid var(--border);color:var(--accent);
+    border-radius:12px;width:40px;height:40px;font-size:16px;box-shadow:var(--shadow);
+    transition:transform .15s;}
+  header .refresh:active{transform:scale(.88) rotate(-40deg);}
+  header .refresh.spin svg{animation:spin .6s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  nav{display:flex;overflow-x:auto;gap:6px;padding:2px 14px 14px;scrollbar-width:none;}
+  nav::-webkit-scrollbar{display:none;}
+  nav button{flex:0 0 auto;background:var(--card);color:var(--sub);border:1px solid var(--border);
+    padding:8px 14px;border-radius:999px;font-size:12.5px;font-weight:700;
+    transition:background .25s,color .25s,box-shadow .25s,transform .12s;}
+  nav button.active{color:#08110f;background:linear-gradient(135deg,var(--accent2),var(--accent));
+    border-color:transparent;box-shadow:0 4px 14px -4px rgba(79,209,197,.55);}
+  nav button:active{transform:scale(.93);}
+
+  main{padding:2px 14px 34px;}
+  #out{animation:tabIn .3s ease;}
+  @keyframes tabIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+
+  .card{background:linear-gradient(180deg,var(--card2),var(--card));border:1px solid var(--border);
+    border-radius:18px;padding:15px;margin-bottom:11px;box-shadow:var(--shadow);
+    opacity:0;animation:cardIn .45s cubic-bezier(.2,.8,.2,1) forwards;}
+  @keyframes cardIn{from{opacity:0;transform:translateY(10px) scale(.98);}to{opacity:1;transform:none;}}
+  .card .title{font-size:11.5px;color:var(--accent);font-weight:800;text-transform:uppercase;
+    letter-spacing:.6px;margin-bottom:11px;display:flex;align-items:center;gap:7px;}
+  .card .title svg{width:15px;height:15px;flex:0 0 auto;}
+
+  .freq-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px 18px;}
+  .freq-grid .core{display:flex;justify-content:space-between;font-size:12.5px;color:var(--sub);
+    background:#ffffff08;padding:7px 10px;border-radius:10px;transition:background .2s;}
+  .freq-grid .core b{color:var(--text);font-weight:700;}
+
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .big-row{display:flex;align-items:center;gap:12px;}
+  .big-row .num{font-size:27px;font-weight:800;}
+  .big-row .lines{display:flex;flex-direction:column;gap:3px;}
+  .big-row .lines div{font-size:12px;color:var(--sub);}
+  .big-row .lines b{color:var(--text);}
+  .ring-row{display:flex;align-items:center;gap:14px;}
+  .ring-row .info div{font-size:12px;color:var(--sub);margin-bottom:2px;}
+  .ring-row .info b{color:var(--text);font-size:13.5px;}
+  .ring-progress{transition:stroke-dashoffset .05s linear;}
+
+  .kv .row{display:flex;justify-content:space-between;gap:10px;padding:7px 0;
+    border-bottom:1px solid #ffffff08;font-size:12.8px;}
+  .kv .row:last-child{border-bottom:none;}
+  .kv .row .k{color:var(--sub);}
+  .kv .row .v{font-weight:700;text-align:right;word-break:break-word;}
+
+  pre{white-space:pre-wrap;word-break:break-all;color:#aeb8c7;margin:0;
+    font-size:11px;font-family:"SF Mono",Consolas,monospace;line-height:1.55;}
+
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+  .chip{background:#ffffff0c;border:1px solid var(--border);color:#b7c0cf;
+    font-size:10.5px;font-family:"SF Mono",Consolas,monospace;padding:4px 8px;border-radius:8px;
+    opacity:0;animation:chipIn .35s ease forwards;}
+  @keyframes chipIn{from{opacity:0;transform:scale(.85);}to{opacity:1;transform:none;}}
+  .more-btn{margin-top:10px;background:none;border:1px solid var(--border);color:var(--accent);
+    font-size:12px;font-weight:700;padding:8px 12px;border-radius:10px;width:100%;transition:transform .12s;}
+  .more-btn:active{transform:scale(.97);}
+
+  .searchbox{width:100%;background:#ffffff0a;border:1px solid var(--border);border-radius:12px;
+    color:var(--text);padding:10px 12px;font-size:13px;margin-bottom:10px;outline:none;}
+  .searchbox::placeholder{color:var(--sub);}
+  .app-list{max-height:none;}
+  .app-row{display:flex;align-items:center;padding:9px 2px;
+    border-bottom:1px solid #ffffff08;font-size:12.5px;
+    opacity:0;animation:rowIn .3s ease forwards;}
+  @keyframes rowIn{from{opacity:0;transform:translateX(-6px);}to{opacity:1;transform:none;}}
+  .app-row:last-child{border-bottom:none;}
+  .app-row .pkg{color:var(--text);word-break:break-all;}
+  .app-count{font-size:11px;color:var(--sub);margin-bottom:8px;}
+  .pkg-avatar{flex:0 0 auto;width:26px;height:26px;border-radius:8px;display:flex;
+    align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:800;
+    margin-right:10px;}
+
+  details.sensor-item{border-bottom:1px solid #ffffff08;padding:11px 2px;}
+  details.sensor-item:last-child{border-bottom:none;}
+  details.sensor-item summary{list-style:none;display:flex;align-items:center;
+    justify-content:space-between;cursor:pointer;}
+  details.sensor-item summary::-webkit-details-marker{display:none;}
+  details.sensor-item .sensor-name{color:var(--accent);font-weight:700;font-size:14px;}
+  details.sensor-item .sensor-sub{color:var(--sub);font-size:12px;margin-top:2px;}
+  details.sensor-item .chev{color:var(--sub);flex:0 0 auto;transition:transform .25s;}
+  details.sensor-item[open] .chev{transform:rotate(90deg);color:var(--accent);}
+  details.sensor-item[open] summary{margin-bottom:4px;}
+
+  .spinner{width:14px;height:14px;border:2px solid #ffffff22;border-top-color:var(--accent);
+    border-radius:50%;display:inline-block;animation:spin .7s linear infinite;margin-right:7px;
+    vertical-align:-2px;}
+
+  .err{background:#ff6b6b1a;border:1px solid #ff6b6b4d;color:#ff9d9d;
+    border-radius:14px;padding:12px 14px;margin:0 0 10px;font-size:12.5px;}
+  .muted{color:var(--sub);font-size:12.5px;padding:6px 0;}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Sys Info</h1>
+    <div class="status"><span class="dot" id="dot"></span><span id="status">loading...</span></div>
+  </div>
+  <button class="refresh" id="refreshBtn" onclick="refreshCurrent()">↻</button>
+</header>
+<nav id="tabs"></nav>
+<main><div id="out"></div></main>
+
+<script>
+const ICONS = {
+  cpu: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"/></svg>',
+  battery: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="17" height="10" rx="2"/><path d="M22 10v4" stroke-linecap="round"/></svg>',
+  net: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12.5a11 11 0 0114 0M8 15.5a7 7 0 018 0M11 18.5a3 3 0 012 0"/><circle cx="12" cy="20" r=".6" fill="currentColor"/></svg>',
+  apps: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>',
+  display: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4" stroke-linecap="round"/></svg>',
+  ram: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="8" width="16" height="8" rx="1.5"/><path d="M8 8V5M12 8V5M16 8V5M8 19v-3M12 19v-3M16 19v-3" stroke-linecap="round"/></svg>',
+  storage: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.66 3.58 3 8 3s8-1.34 8-3V5M4 12c0 1.66 3.58 3 8 3s8-1.34 8-3"/></svg>',
+  device: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M11 18h2" stroke-linecap="round"/></svg>',
+  gpu: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="6" width="18" height="10" rx="2"/><path d="M7 16v3M17 16v3M6 10h.01M9 10h.01" stroke-linecap="round"/></svg>',
+  wifi: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 8.5a15 15 0 0120 0M5 12.5a10.5 10.5 0 0114 0M8.5 16.5a5.5 5.5 0 017 0"/><circle cx="12" cy="20" r=".6" fill="currentColor"/></svg>',
+  disk: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.5"/></svg>',
+  build: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>',
+  camera: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V9a1 1 0 011-1z"/><circle cx="12" cy="13" r="3.5"/></svg>',
+  sensor: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></svg>',
+  search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>',
+};
+function icon(name){ return `<span style="display:inline-flex;color:var(--accent)">${ICONS[name]||''}</span>`; }
+
+const TABS = [
+  {id:'panel',    label:'Panel'},
+  {id:'hardware', label:'Hardware'},
+  {id:'system',   label:'System'},
+  {id:'battery',  label:'Battery'},
+  {id:'network',  label:'Network'},
+  {id:'apps',     label:'Apps'},
+  {id:'camera',   label:'Camera'},
+  {id:'sensors',  label:'Sensors'},
+  {id:'graphics', label:'Graphics'},
+  {id:'disk',     label:'Disk'},
+];
+let currentTab = 'panel';
+const TAB_DATA = {};
+
+function esc(s){ return (s+'').replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+function row(k,v){ return `<div class="row"><span class="k">${esc(k)}</span><span class="v">${esc(v||'-')}</span></div>`; }
+
+let ringCounter = 0;
+function ringSvg(pct, color){
+  const id = 'ring'+(ringCounter++);
+  const r=30, c=2*Math.PI*r;
+  pct = Math.max(0, Math.min(100, pct||0));
+  return `<svg width="72" height="72" viewBox="0 0 72 72" data-pct="${pct}" data-c="${c}">
+    <circle cx="36" cy="36" r="${r}" fill="none" stroke="#ffffff14" stroke-width="8"/>
+    <circle class="ring-progress" cx="36" cy="36" r="${r}" fill="none" stroke="${color}" stroke-width="8"
+      stroke-dasharray="${c}" stroke-dashoffset="${c}" stroke-linecap="round"
+      transform="rotate(-90 36 36)"/>
+    <text class="ring-text" x="36" y="41" text-anchor="middle" font-size="15" font-weight="800" fill="${color}">0%</text>
+  </svg>`;
+}
+function animateRings(container){
+  container.querySelectorAll('svg[data-pct]').forEach(svg=>{
+    const pct = parseFloat(svg.dataset.pct);
+    const c = parseFloat(svg.dataset.c);
+    const circle = svg.querySelector('.ring-progress');
+    const text = svg.querySelector('.ring-text');
+    const dur = 750, start = performance.now();
+    function step(now){
+      const t = Math.min(1, (now-start)/dur);
+      const eased = 1 - Math.pow(1-t, 3);
+      const cur = pct*eased;
+      circle.style.strokeDashoffset = c - (cur/100)*c;
+      text.textContent = Math.round(cur)+'%';
+      if(t<1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  });
+}
+function animateCounters(container){
+  container.querySelectorAll('.count-up').forEach(el=>{
+    const target = parseInt(el.dataset.target,10);
+    if(isNaN(target)){ return; }
+    const dur = 650, start = performance.now();
+    function step(now){
+      const t = Math.min(1, (now-start)/dur);
+      const eased = 1 - Math.pow(1-t, 3);
+      el.textContent = Math.round(target*eased);
+      if(t<1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  });
+}
+function staggerCards(container){
+  container.querySelectorAll('.card').forEach((c,i)=>{ c.style.animationDelay = (i*55)+'ms'; });
+  container.querySelectorAll('.chip').forEach((c,i)=>{ c.style.animationDelay = (i*12)+'ms'; });
+  container.querySelectorAll('.app-row').forEach((c,i)=>{ c.style.animationDelay = (Math.min(i,40)*15)+'ms'; });
+}
+
+function parseBlocks(stdout){
+  const blocks = {}; let cur = null;
+  stdout.split('\n').forEach(line=>{
+    const m = line.match(/^==(.+)==$/);
+    if(m){ cur = m[1]; blocks[cur] = []; }
+    else if(cur !== null) blocks[cur].push(line);
+  });
+  return blocks;
+}
+function kvBlock(lines){
+  const map = {};
+  (lines||[]).forEach(l=>{
+    const i = l.indexOf(':');
+    if(i>-1) map[l.slice(0,i).trim()] = l.slice(i+1).trim();
+  });
+  return map;
+}
+function nonEmpty(lines){ return (lines||[]).filter(l=>l.trim()); }
+
+// NOTE: Android's toybox/busybox grep often lacks \s (PCRE) support,
+// so patterns avoid \s and use plain literal matches instead.
+const TAB_CMDS = {
+  panel: `
+echo ==DEVICE==
+echo "Manufacturer: $(getprop ro.product.manufacturer)"
+echo "Model: $(getprop ro.product.model)"
+echo "Android: $(getprop ro.build.version.release)"
+echo "SDK: $(getprop ro.build.version.sdk)"
+echo "Security patch: $(getprop ro.build.version.security_patch)"
+echo "Uptime: $(uptime)"
+echo ==CPUFREQ==
+for f in /sys/devices/system/cpu/cpu*/cpufreq/scaling_cur_freq; do cat "$f" 2>/dev/null; echo; done
+echo ==RAM==
+grep -E "MemTotal|MemAvailable" /proc/meminfo
+echo ==BATTERY==
+dumpsys battery 2>/dev/null | grep -E "level:|status:|health:|temperature:"
+echo ==DISPLAY==
+echo "Resolution: $(wm size | cut -d: -f2 | sed 's/^ *//')"
+echo "Density: $(wm density | cut -d: -f2 | sed 's/^ *//')"
+echo ==STORAGE==
+df -h /data 2>/dev/null | tail -1
+echo ==APPS==
+echo "Total: $(pm list packages 2>/dev/null | wc -l)"
+echo "User: $(pm list packages -3 2>/dev/null | wc -l)"
+echo "System: $(pm list packages -s 2>/dev/null | wc -l)"
+echo ==NET==
+echo "Hostname: $(getprop net.hostname)"
+echo "WiFi IP: $(ip -4 addr show wlan0 2>/dev/null | grep -oE "inet [0-9.]+" | cut -d' ' -f2)"
+`,
+  hardware: `
+echo ==CPU==
+echo "Hardware: $(grep -m1 Hardware /proc/cpuinfo | cut -d: -f2 | sed 's/^ *//')"
+echo "Core count: $(nproc)"
+echo "ABI: $(getprop ro.product.cpu.abi)"
+echo "Supported ABIs: $(getprop ro.product.cpu.abilist)"
+echo "Max frequency (core0): $(cat /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq 2>/dev/null)"
+echo ==CPUFREQ==
+for f in /sys/devices/system/cpu/cpu*/cpufreq/scaling_cur_freq; do cat "$f" 2>/dev/null; echo; done
+echo ==GPU==
+dumpsys SurfaceFlinger 2>/dev/null | grep -m1 "GLES:"
+echo ==DISPLAY==
+echo "Resolution: $(wm size | cut -d: -f2 | sed 's/^ *//')"
+echo "Density: $(wm density | cut -d: -f2 | sed 's/^ *//')"
+echo ==RAM==
+grep -E "MemTotal|MemAvailable" /proc/meminfo
+echo ==BOARD==
+echo "Board: $(getprop ro.product.board)"
+echo "Platform: $(getprop ro.board.platform)"
+`,
+  system: `
+echo ==SYSTEM==
+echo "Android: $(getprop ro.build.version.release)"
+echo "SDK: $(getprop ro.build.version.sdk)"
+echo "Build ID: $(getprop ro.build.id)"
+echo "Security patch: $(getprop ro.build.version.security_patch)"
+echo "Bootloader: $(getprop ro.bootloader)"
+echo "Baseband: $(getprop gsm.version.baseband)"
+echo "Kernel: $(uname -r)"
+echo "Uptime: $(uptime)"
+echo ==FINGERPRINT==
+getprop ro.build.fingerprint
+`,
+  battery: `
+echo ==BATTERY==
+dumpsys battery 2>/dev/null
+`,
+  network: `
+echo ==NET==
+echo "Hostname: $(getprop net.hostname)"
+echo "WiFi IP: $(ip -4 addr show wlan0 2>/dev/null | grep -oE "inet [0-9.]+" | cut -d' ' -f2)"
+echo ==IFACES==
+ip -o link show 2>/dev/null | awk -F': ' '{print $2}'
+echo ==WIFI==
+dumpsys wifi 2>/dev/null | grep -m1 "mWifiInfo"
+true
+`,
+  apps: `
+echo ==APPSUM==
+echo "Total: $(pm list packages 2>/dev/null | wc -l)"
+echo "User: $(pm list packages -3 2>/dev/null | wc -l)"
+echo "System: $(pm list packages -s 2>/dev/null | wc -l)"
+echo ==USERAPPS==
+pm list packages -3 2>/dev/null | sed 's/^package://' | sort
+`,
+  camera: `
+echo ==CAMFEATURES==
+pm list features 2>/dev/null | grep -i camera
+echo ==CAMDUMP==
+dumpsys media.camera 2>/dev/null | grep -E "Camera ID|Camera [0-9]+|Facing|availableFocalLengths|availableApertures|physicalSize|pixelArraySize|activeArraySize|availableOpticalStabilization|sensitivityRange|exposureTimeRange|flash.info.available|supportedHardwareLevel" | head -n 300
+echo ==CAMRAW==
+dumpsys media.camera 2>/dev/null | head -n 40
+true
+`,
+  sensors: `
+echo ==SENSORS==
+dumpsys sensorservice 2>/dev/null | sed -n '/Sensor List/,/^$/p' | head -n 300
+true
+`,
+  graphics: `
+echo ==OPENGL==
+dumpsys SurfaceFlinger 2>/dev/null | grep -A1 -m1 "GLES:"
+echo ==VULKAN_FEATURES==
+pm list features 2>/dev/null | grep -i vulkan
+echo ==VULKAN_LIBS==
+ls /vendor/lib64/hw/ 2>/dev/null | grep -i vulkan
+ls /system/lib64/hw/ 2>/dev/null | grep -i vulkan
+true
+`,
+  disk: `
+echo ==MOUNTS==
+df -h 2>/dev/null
+echo ==PARTITIONS==
+cat /proc/partitions 2>/dev/null
+`
+};
+
+function renderPanel(b){
+  const dev = kvBlock(b['DEVICE']);
+  const bat = kvBlock(b['BATTERY']);
+  const disp = kvBlock(b['DISPLAY']);
+  const app = kvBlock(b['APPS']);
+  const net = kvBlock(b['NET']);
+  const ram = kvBlock(b['RAM']);
+  const storLine = (b['STORAGE']||[])[0] || '';
+  const cores = nonEmpty(b['CPUFREQ']).map(l=>parseInt(l.trim(),10)).filter(n=>!isNaN(n));
+
+  const totalKb = parseInt((ram['MemTotal']||'0').replace(/\D/g,''),10);
+  const availKb = parseInt((ram['MemAvailable']||'0').replace(/\D/g,''),10);
+  const ramPct = totalKb ? Math.round(100*(totalKb-availKb)/totalKb) : 0;
+  const ramUsedGb = ((totalKb-availKb)/1048576).toFixed(2);
+  const ramTotalGb = (totalKb/1048576).toFixed(2);
+
+  const sp = storLine.trim().split(/\s+/);
+  const storPct = sp[4] ? parseInt(sp[4],10) : 0;
+
+  const battLevel = parseInt(bat['level'],10) || 0;
+  const battStatusMap = {1:'Unknown',2:'Charging',3:'Discharging',4:'Not charging',5:'Full'};
+  const battTemp = bat['temperature'] ? (parseInt(bat['temperature'],10)/10).toFixed(1)+'°C' : '-';
+
+  let html = '';
+  if(cores.length){
+    html += `<div class="card"><div class="title">${icon('cpu')}CPU Frequency</div><div class="freq-grid">
+      ${cores.map((mhz,i)=>`<div class="core">Core ${i}<b>${mhz} MHz</b></div>`).join('')}
+    </div></div>`;
+  }
+  html += `<div class="two-col">
+    <div class="card"><div class="title">${icon('battery')}Battery</div>
+      <div class="ring-row">${ringSvg(battLevel,'var(--bat)')}
+        <div class="info"><div><b>${esc(battStatusMap[bat['status']]||bat['status']||'-')}</b></div><div>${battTemp}</div></div>
+      </div></div>
+    <div class="card"><div class="title">${icon('net')}Network</div><div class="lines">
+        <div style="font-size:12.5px;color:var(--sub)">IP: <b style="color:var(--text)">${esc(net['WiFi IP']||'not connected')}</b></div>
+        <div style="font-size:12.5px;color:var(--sub);margin-top:4px">Host: <b style="color:var(--text)">${esc(net['Hostname']||'-')}</b></div>
+      </div></div>
+  </div>`;
+  html += `<div class="two-col">
+    <div class="card"><div class="title">${icon('apps')}Apps</div>
+      <div class="big-row"><div class="num count-up" data-target="${parseInt(app['Total'],10)||0}" style="color:var(--accent)">0</div>
+        <div class="lines"><div>Total</div>
+          <div><b>${esc(app['User']||'-')}</b> user</div>
+          <div><b>${esc(app['System']||'-')}</b> system</div></div>
+      </div></div>
+    <div class="card"><div class="title">${icon('display')}Display</div><div class="lines">
+        <div style="font-size:12.5px;color:var(--sub)">Resolution<br><b style="color:var(--text);font-size:14px">${esc(disp['Resolution']||'-')}</b></div>
+        <div style="font-size:12.5px;color:var(--sub);margin-top:6px">Density<br><b style="color:var(--text);font-size:14px">${esc(disp['Density']||'-')} dpi</b></div>
+      </div></div>
+  </div>`;
+  html += `<div class="two-col">
+    <div class="card"><div class="title">${icon('ram')}RAM</div><div class="ring-row">${ringSvg(ramPct,'var(--ram)')}
+        <div class="info"><div><b>${ramUsedGb} GB</b> used</div><div>${ramTotalGb} GB total</div></div>
+      </div></div>
+    <div class="card"><div class="title">${icon('storage')}Storage</div><div class="ring-row">${ringSvg(isNaN(storPct)?0:storPct,'var(--sto)')}
+        <div class="info"><div><b>${esc(sp[2]||'-')}</b> used</div><div>${esc(sp[1]||'-')} total</div></div>
+      </div></div>
+  </div>`;
+  html += `<div class="card"><div class="title">${icon('device')}Device</div><div class="kv">
+    ${row('Manufacturer', dev['Manufacturer'])}${row('Model', dev['Model'])}
+    ${row('Android', dev['Android'])}${row('SDK', dev['SDK'])}
+    ${row('Security patch', dev['Security patch'])}${row('Uptime', dev['Uptime'])}
+  </div></div>`;
+  return html;
+}
+
+function renderHardware(b){
+  const cpu = kvBlock(b['CPU']);
+  const board = kvBlock(b['BOARD']);
+  const disp = kvBlock(b['DISPLAY']);
+  const ram = kvBlock(b['RAM']);
+  const gpuLine = (b['GPU']||[])[0] || '';
+  const gpuParts = gpuLine.replace(/^GLES:\s*/,'').split(',').map(s=>s.trim());
+  const cores = nonEmpty(b['CPUFREQ']).map(l=>parseInt(l.trim(),10)).filter(n=>!isNaN(n));
+  const totalKb = parseInt((ram['MemTotal']||'0').replace(/\D/g,''),10);
+
+  let html = `<div class="card"><div class="title">${icon('cpu')}CPU</div><div class="kv">
+    ${row('Hardware', cpu['Hardware'])}
+    ${row('Core count', cpu['Core count'])}
+    ${row('ABI', cpu['ABI'])}
+    ${row('Supported ABIs', cpu['Supported ABIs'])}
+    ${row('Max frequency', cpu['Max frequency (core0)'] ? Math.round(cpu['Max frequency (core0)']/1000)+' MHz' : '-')}
+  </div></div>`;
+
+  if(cores.length){
+    html += `<div class="card"><div class="title">${icon('cpu')}Core Frequencies</div><div class="freq-grid">
+      ${cores.map((mhz,i)=>`<div class="core">Core ${i}<b>${mhz} MHz</b></div>`).join('')}
+    </div></div>`;
+  }
+
+  html += `<div class="card"><div class="title">${icon('gpu')}GPU / Display</div><div class="kv">
+    ${row('GPU vendor', gpuParts[0])}
+    ${row('GPU renderer', gpuParts[1])}
+    ${row('OpenGL ES', gpuParts[2])}
+    ${row('Resolution', disp['Resolution'])}
+    ${row('Density', (disp['Density']||'')+' dpi')}
+  </div></div>`;
+
+  html += `<div class="card"><div class="title">${icon('device')}Board / RAM</div><div class="kv">
+    ${row('Board', board['Board'])}
+    ${row('Platform', board['Platform'])}
+    ${row('Total RAM', totalKb ? (totalKb/1048576).toFixed(2)+' GB' : '-')}
+  </div></div>`;
+  return html;
+}
+
+function renderSystem(b){
+  const s = kvBlock(b['SYSTEM']);
+  const fp = nonEmpty(b['FINGERPRINT']).join('\n');
+  return `<div class="card"><div class="title">${icon('build')}System</div><div class="kv">
+      ${row('Android', s['Android'])}${row('SDK', s['SDK'])}
+      ${row('Build ID', s['Build ID'])}${row('Security patch', s['Security patch'])}
+      ${row('Bootloader', s['Bootloader'])}${row('Baseband', s['Baseband'])}
+      ${row('Kernel', s['Kernel'])}${row('Uptime', s['Uptime'])}
+    </div></div>
+    <div class="card"><div class="title">${icon('device')}Fingerprint</div><pre>${esc(fp||'-')}</pre></div>`;
+}
+
+function renderBattery(b){
+  const lines = nonEmpty(b['BATTERY']);
+  if(!lines.length) return `<div class="muted">Could not read battery info.</div>`;
+  const rows = lines.map(l=>{
+    const t = l.trim();
+    const i = t.indexOf(':');
+    if(i===-1) return '';
+    return row(t.slice(0,i).trim(), t.slice(i+1).trim());
+  }).join('');
+  return `<div class="card"><div class="title">${icon('battery')}Battery (dumpsys battery)</div><div class="kv">${rows}</div></div>`;
+}
+
+function renderNetwork(b){
+  const net = kvBlock(b['NET']);
+  const ifaces = nonEmpty(b['IFACES']);
+  const wifi = nonEmpty(b['WIFI']);
+  let html = `<div class="card"><div class="title">${icon('net')}Network</div><div class="kv">
+    ${row('Hostname', net['Hostname'])}${row('WiFi IP', net['WiFi IP'])}
+  </div></div>`;
+  html += `<div class="card"><div class="title">${icon('net')}Interfaces</div>` +
+    (ifaces.length ? `<div class="kv">${ifaces.map(i=>row(i.replace('@NONE',''),'')).join('')}</div>`
+                   : `<div class="muted">No interfaces found</div>`) + `</div>`;
+  html += `<div class="card"><div class="title">${icon('wifi')}WiFi</div>` + renderWifiInfo(wifi) + `</div>`;
+  return html;
+}
+
+function renderWifiInfo(wifi){
+  if(!wifi.length) return `<div class="muted">Could not read WiFi details (not connected, or Full access mode may be required)</div>`;
+  const line = wifi[0].replace(/^.*mWifiInfo\s*/, '');
+  // Fields are comma-separated "Key: value" pairs on one line, e.g.
+  // SSID: "Home",BSSID: xx,...,Supplicant state: COMPLETED,RSSI: -55,Link speed: 866Mbps,Frequency: 5180MHz
+  const wanted = ['SSID','Supplicant state','RSSI','Link speed','Frequency','Wi-Fi standard'];
+  const map = {};
+  line.split(',').forEach(seg=>{
+    const i = seg.indexOf(':');
+    if(i===-1) return;
+    const k = seg.slice(0,i).trim();
+    const v = seg.slice(i+1).trim().replace(/^"|"$/g,'');
+    map[k] = v;
+  });
+  const rows = wanted.filter(k=>map[k]!==undefined).map(k=>row(k, map[k]));
+  if(!rows.length) return `<pre>${esc(line)}</pre>`;
+  return `<div class="kv">${rows.join('')}</div>`;
+}
+
+function pkgColor(pkg){
+  let hash = 0;
+  for(let i=0;i<pkg.length;i++) hash = (hash*31 + pkg.charCodeAt(i)) | 0;
+  const hue = Math.abs(hash) % 360;
+  return `hsl(${hue},55%,42%)`;
+}
+function pkgInitial(pkg){
+  const seg = pkg.split('.').filter(Boolean).pop() || pkg;
+  return (seg[0]||'?').toUpperCase();
+}
+function appRow(p){
+  return `<div class="app-row">
+    <span class="pkg-avatar" style="background:${pkgColor(p)}">${esc(pkgInitial(p))}</span>
+    <span class="pkg">${esc(p)}</span>
+  </div>`;
+}
+
+function renderApps(b){
+  const sum = kvBlock(b['APPSUM']);
+  const pkgs = nonEmpty(b['USERAPPS']);
+  window.__allApps = pkgs;
+  let html = `<div class="card"><div class="title">${icon('apps')}Summary</div><div class="kv">
+    ${row('Total', sum['Total'])}${row('User', sum['User'])}${row('System', sum['System'])}
+  </div></div>`;
+  html += `<div class="card"><div class="title">${icon('apps')}User Apps</div>
+    <input class="searchbox" id="appFilter" placeholder="Filter package name..." oninput="filterApps(this.value)">
+    <div class="app-count" id="appCount">${pkgs.length} apps</div>
+    <div class="app-list" id="appList">${pkgs.map(p=>appRow(p)).join('')}</div>
+  </div>`;
+  return html;
+}
+function filterApps(q){
+  const all = window.__allApps || [];
+  q = q.trim().toLowerCase();
+  const filtered = q ? all.filter(p=>p.toLowerCase().includes(q)) : all;
+  document.getElementById('appCount').textContent = filtered.length+' apps';
+  const list = document.getElementById('appList');
+  list.innerHTML = filtered.map(p=>appRow(p)).join('');
+  staggerCards(list);
+}
+
+function renderCamera(b){
+  const feats = nonEmpty(b['CAMFEATURES']);
+  const dumpLines = nonEmpty(b['CAMDUMP']);
+
+  // Group characteristic lines under the nearest preceding "Camera ID" marker.
+  const cams = [];
+  let cur = null;
+  dumpLines.forEach(l=>{
+    const idMatch = l.match(/Camera ID\s*[:=]?\s*(\S+)/i);
+    if(idMatch){
+      cur = { id: idMatch[1], facing:null, focal:null, aperture:null, physSize:null,
+              pixelArray:null, activeArray:null, ois:null, flash:null, iso:null, shutter:null, hwLevel:null };
+      cams.push(cur);
+      return;
+    }
+    if(!cur) return;
+    const bracket = l.match(/\[([^\]]+)\]/);
+    const vals = bracket ? bracket[1].split(',').map(s=>parseFloat(s.trim())).filter(n=>!isNaN(n)) : [];
+    if(/Facing/i.test(l)){
+      const fm = l.match(/Facing\s*[:=]?\s*(\S+)/i);
+      if(fm) cur.facing = fm[1].replace(/[^A-Za-z]/g,'');
+    } else if(/availableFocalLengths/i.test(l) && vals.length) cur.focal = vals[0];
+    else if(/availableApertures/i.test(l) && vals.length) cur.aperture = vals[0];
+    else if(/physicalSize/i.test(l) && vals.length>=2) cur.physSize = vals;
+    else if(/pixelArraySize/i.test(l)){
+      const m = l.match(/(\d{3,5})\s*[x×]\s*(\d{3,5})/);
+      if(m) cur.pixelArray = [parseInt(m[1],10), parseInt(m[2],10)];
+      else if(vals.length>=2) cur.pixelArray = [vals[0], vals[1]];
+    } else if(/activeArraySize/i.test(l)){
+      const m = l.match(/(\d{3,5})\s*[x×]\s*(\d{3,5})/);
+      if(m) cur.activeArray = [parseInt(m[1],10), parseInt(m[2],10)];
+    } else if(/availableOpticalStabilization/i.test(l)) cur.ois = !/OFF|^\s*$/i.test(l.split(':').pop()||'') && vals.length>0 || /ON/i.test(l);
+    else if(/sensitivityRange/i.test(l) && vals.length>=2) cur.iso = vals;
+    else if(/exposureTimeRange/i.test(l) && vals.length>=2) cur.shutter = vals;
+    else if(/flash\.info\.available/i.test(l)) cur.flash = /true/i.test(l);
+    else if(/supportedHardwareLevel/i.test(l)){ const m=l.match(/:\s*(\S+)/); if(m) cur.hwLevel = m[1]; }
+  });
+
+  let html = '';
+  if(cams.length){
+    const backs = cams.filter(c=>/BACK/i.test(c.facing||''));
+    const fronts = cams.filter(c=>/FRONT/i.test(c.facing||''));
+    const others = cams.filter(c=>!/BACK|FRONT/i.test(c.facing||''));
+    const ordered = [...backs, ...fronts, ...others];
+
+    ordered.forEach((c,idx)=>{
+      const label = /BACK/i.test(c.facing||'') ? `Rear Camera ${backs.indexOf(c)+1}`
+                  : /FRONT/i.test(c.facing||'') ? `Front Camera ${fronts.indexOf(c)+1}`
+                  : `Camera ${c.id}`;
+      const mp = c.pixelArray ? ((c.pixelArray[0]*c.pixelArray[1])/1e6).toFixed(1)+' MP' : '-';
+      const subtitle = [
+        c.aperture ? 'f/'+c.aperture : null,
+        c.focal ? c.focal+' mm' : null
+      ].filter(Boolean).join(' • ') || 'Specs unavailable';
+
+      const chips = [];
+      if(c.ois) chips.push('OIS');
+      if(c.flash) chips.push('Flash');
+
+      const isoStr = c.iso ? `${Math.round(c.iso[0])} - ${Math.round(c.iso[1])}` : null;
+      let shutterStr = null;
+      if(c.shutter){
+        const minS = c.shutter[0]/1e9, maxS = c.shutter[1]/1e9;
+        const fast = minS>0 ? '1/'+Math.round(1/minS)+'s' : '-';
+        const slow = maxS>=1 ? maxS.toFixed(1)+'s' : (maxS>0 ? '1/'+Math.round(1/maxS)+'s' : '-');
+        shutterStr = `${fast} - ${slow}`;
+      }
+      const sensorSize = c.physSize ? `${c.physSize[0].toFixed(1)} x ${c.physSize[1].toFixed(1)} mm` : null;
+      const activeRes = c.activeArray ? `${c.activeArray[0]}x${c.activeArray[1]}` : null;
+
+      html += `<div class="card"><div class="title">${icon('camera')}${esc(label)}</div>
+        <div class="big-row" style="margin-bottom:4px;">
+          <span style="color:var(--sub)">${icon('camera')}</span>
+          <div class="lines"><div style="font-size:22px;font-weight:800;color:var(--text)">${esc(mp)}</div>
+            <div style="font-size:13px;color:var(--sub)">${esc(subtitle)}</div></div>
+        </div>
+        ${chips.length ? `<div class="chips" style="margin-top:6px;margin-bottom:4px;">${chips.map(c=>`<span class="chip" style="border-color:var(--accent);color:var(--accent)">${c}</span>`).join('')}</div>` : ''}
+        <div class="kv" style="margin-top:8px;">
+          ${sensorSize ? row('Sensor size', sensorSize) : ''}
+          ${activeRes ? row('Active resolution', activeRes) : ''}
+          ${isoStr ? row('ISO range', isoStr) : ''}
+          ${shutterStr ? row('Shutter speed', shutterStr) : ''}
+          ${c.hwLevel ? row('Hardware level', c.hwLevel) : ''}
+        </div>
+        ${(!sensorSize && !isoStr && !shutterStr) ? '<div class="muted">Detailed characteristics not exposed by this device\'s camera HAL.</div>' : ''}
+      </div>`;
+    });
+  } else {
+    html += `<div class="card"><div class="title">${icon('camera')}Cameras</div>
+      <div class="muted">No per-camera characteristics could be read from this device (camera dump may be restricted).</div></div>`;
+  }
+
+  html += `<div class="card"><div class="title">${icon('camera')}Feature Flags</div>`;
+  if(feats.length){
+    html += `<div class="kv">${feats.map(l=>{
+      const t = l.trim().replace(/^feature:/,'');
+      const i = t.indexOf('=');
+      return i>-1 ? row(t.slice(0,i), t.slice(i+1)) : row(t,'✓ Supported');
+    }).join('')}</div>`;
+  } else {
+    html += `<div class="muted">No camera feature flags reported.</div>`;
+  }
+  html += `</div>`;
+
+  if(!cams.length){
+    const raw = nonEmpty(b['CAMRAW']);
+    if(raw.length){
+      html += `<div class="card"><div class="title">${icon('camera')}Raw dumpsys preview</div>
+        <div class="muted" style="margin-bottom:8px;">Couldn't find a recognizable "Camera ID" section — here's a preview of what this device actually reports, for reference.</div>
+        <pre>${esc(raw.join('\n'))}</pre></div>`;
+    }
+  }
+
+  html += `<div class="muted" style="padding:0 2px;">Note: values come directly from this device's Camera2 characteristics dump. Some vendors restrict or omit fields, so a dash means the system didn't report that value here — not that the camera lacks it.</div>`;
+  return html;
+}
+
+const SENSOR_TYPE_LABELS = {
+  accelerometer: 'Accelerometer', magnetic_field: 'Magnetic Field', orientation: 'Orientation',
+  gyroscope: 'Gyroscope', light: 'Light', pressure: 'Pressure', temperature: 'Temperature',
+  proximity: 'Proximity', gravity: 'Gravity', linear_acceleration: 'Linear Acceleration',
+  rotation_vector: 'Rotation Vector', relative_humidity: 'Humidity', ambient_temperature: 'Temperature',
+  magnetic_field_uncalibrated: 'Magnetic Field (Uncalibrated)', game_rotation_vector: 'Game Rotation Vector',
+  gyroscope_uncalibrated: 'Gyroscope (Uncalibrated)', significant_motion: 'Significant Motion',
+  step_detector: 'Step Detector', step_counter: 'Step Counter',
+  geomagnetic_rotation_vector: 'Geomagnetic Rotation Vector', heart_rate: 'Heart Rate',
+  accelerometer_uncalibrated: 'Accelerometer (Uncalibrated)', device_orientation: 'Device Orientation',
+  motion_detect: 'Motion Detect', stationary_detect: 'Stationary Detect', pose_6dof: 'Pose 6DoF',
+  hinge_angle: 'Hinge Angle', head_tracker: 'Head Tracker',
+};
+function sensorLabel(typeKey){
+  if(!typeKey) return 'Sensor';
+  const clean = typeKey.trim().replace(/^android\.sensor\./,'').replace(/\(\d*\)\s*$/,'').trim();
+  if(SENSOR_TYPE_LABELS[clean]) return SENSOR_TYPE_LABELS[clean];
+  return clean.replace(/_/g,' ').replace(/\b\w/g, c=>c.toUpperCase());
+}
+
+function renderSensors(b){
+  const lines = nonEmpty(b['SENSORS']);
+  if(!lines.length) return `<div class="muted">Could not read sensor list.</div>`;
+
+  const sensors = [];
+  let cur = null;
+  lines.forEach(l=>{
+    const newFormat = l.match(/^\s*0x[0-9a-fA-F]+\)/);
+    const oldFormat = l.match(/\(handle=/);
+    if(newFormat || oldFormat){
+      const parts = l.split('|');
+      let product, vendor;
+      if(newFormat){
+        product = parts[0].replace(/^\s*0x[0-9a-fA-F]+\)\s*/, '').trim();
+        vendor = parts[1] ? parts[1].trim() : '';
+      } else {
+        product = parts[0].replace(/^\s*.+?\(handle=.*?\)\S*\s*/, '').trim() || (parts[1]||'').trim();
+        vendor = parts[2] ? parts[2].trim() : '';
+      }
+      const typeMatch = l.match(/type:\s*([^\|]+)/);
+      const label = sensorLabel(typeMatch ? typeMatch[1] : '');
+      // Product string often repeats the category name (e.g. "ICM42632M Accelerometer");
+      // strip that trailing word so the subtitle reads as a clean vendor/model chip.
+      const cleanProduct = product.replace(new RegExp('\\s*'+label.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\s*$','i'), '').trim() || product;
+      const subtitle = [vendor, cleanProduct].filter(Boolean).join(' ');
+      cur = { label, subtitle, detail: {} };
+      sensors.push(cur);
+    } else if(cur){
+      const re = /(\w+)\s*=\s*([-\d.]+[A-Za-z%]*)/g;
+      let m;
+      while((m = re.exec(l)) !== null){ cur.detail[m[1]] = m[2]; }
+      if(/non-wakeUp/i.test(l)) cur.detail.wakeUp = 'no';
+      else if(/\bwakeUp\b/i.test(l)) cur.detail.wakeUp = 'yes';
+      if(/no batching/i.test(l)) cur.detail.batching = 'no';
+      else if(/\bbatching\b/i.test(l)) cur.detail.batching = 'yes';
+      const modeMatch = l.match(/\b(continuous|on-change|one-shot|special)\b/i);
+      if(modeMatch) cur.detail.mode = modeMatch[1];
+    }
+  });
+
+  if(!sensors.length){
+    return `<div class="card"><div class="title">${icon('sensor')}Sensor List (raw)</div><pre>${esc(lines.join('\n'))}</pre></div>`;
+  }
+
+  return `<div class="card" style="padding:6px 15px 10px;"><div class="title" style="margin:9px 2px 4px;">${icon('sensor')}Sensors (${sensors.length})</div>
+    ${sensors.map(s=>{
+      const detailRows = Object.entries(s.detail).map(([k,v])=>row(k.charAt(0).toUpperCase()+k.slice(1), v)).join('');
+      return `<details class="sensor-item">
+        <summary>
+          <div><div class="sensor-name">${esc(s.label)}</div><div class="sensor-sub">${esc(s.subtitle||'Unknown sensor')}</div></div>
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M9 6l6 6-6 6"/></svg>
+        </summary>
+        <div class="kv" style="padding-top:6px;">${detailRows || '<div class="muted">No extra parameters reported.</div>'}</div>
+      </details>`;
+    }).join('')}
+  </div>`;
+}
+
+function renderGraphics(b){
+  const gl = nonEmpty(b['OPENGL']);
+  const vkFeat = nonEmpty(b['VULKAN_FEATURES']);
+  const vkLibs = nonEmpty(b['VULKAN_LIBS']);
+
+  let html = `<div class="card"><div class="title">${icon('gpu')}OpenGL ES</div>`;
+  if(gl.length){
+    const line = gl[0].replace(/^GLES:\s*/,'');
+    const parts = line.split(',').map(s=>s.trim());
+    html += `<div class="kv">${row('Vendor', parts[0])}${row('Renderer', parts[1])}${row('Version', parts[2])}</div>`;
+    if(gl[1]){
+      const exts = gl[1].trim().split(/\s+/).filter(Boolean);
+      const shown = exts.slice(0, 10);
+      const rest = exts.slice(10);
+      html += `<div class="muted" style="margin-top:10px">${exts.length} extensions</div>`;
+      html += `<div class="chips" id="glChipsShown">${shown.map(e=>`<span class="chip">${esc(e)}</span>`).join('')}</div>`;
+      if(rest.length){
+        html += `<div class="chips" id="glChipsRest" style="display:none">${rest.map(e=>`<span class="chip">${esc(e)}</span>`).join('')}</div>`;
+        html += `<button class="more-btn" onclick="
+          const r=document.getElementById('glChipsRest'); r.style.display='flex'; staggerCards(r.parentElement);
+          this.style.display='none';
+        ">Show all ${exts.length} extensions</button>`;
+      }
+    }
+  } else {
+    html += `<div class="muted">OpenGL info could not be detected.</div>`;
+  }
+  html += `</div>`;
+
+  html += `<div class="card"><div class="title">${icon('gpu')}Vulkan</div>`;
+  if(vkFeat.length){
+    html += `<div class="kv">${vkFeat.map(l=>{
+      const t = l.trim().replace(/^feature:/,'');
+      const i = t.indexOf('=');
+      return i>-1 ? row(t.slice(0,i), t.slice(i+1)) : row(t,'');
+    }).join('')}</div>`;
+  } else {
+    html += `<div class="muted">This device doesn't report a Vulkan feature flag, or it couldn't be detected.</div>`;
+  }
+  if(vkLibs.length){
+    html += `<div class="kv" style="margin-top:8px;">${vkLibs.map(l=>row('Driver', l.trim())).join('')}</div>`;
+  }
+  html += `<div class="muted" style="margin-top:8px;">Note: most stock Android builds don't ship a full Vulkan extension dump tool (vulkaninfo), so only the feature flags / driver files the system reports are shown here.</div>`;
+  html += `</div>`;
+  return html;
+}
+
+function renderDisk(b){
+  const mounts = nonEmpty(b['MOUNTS']);
+  const parts = nonEmpty(b['PARTITIONS']);
+  let html = `<div class="card"><div class="title">${icon('disk')}Mounted Volumes</div>`;
+  const dataRows = mounts.filter(l=>!/^Filesystem/.test(l.trim()));
+  if(dataRows.length){
+    html += `<div class="kv">${dataRows.map(l=>{
+      const p = l.trim().split(/\s+/);
+      if(p.length<6) return '';
+      const mount = p.slice(5).join(' ');
+      return row(mount, `${p[3]} free / ${p[1]}`);
+    }).join('')}</div>`;
+  } else {
+    html += `<div class="muted">No data available</div>`;
+  }
+  html += `</div>`;
+  html += `<div class="card"><div class="title">${icon('disk')}/proc/partitions</div>` +
+    (parts.length ? `<pre>${esc(parts.join('\n'))}</pre>` : `<div class="muted">No data available</div>`) + `</div>`;
+  return html;
+}
+
+const RENDERERS = {
+  panel: renderPanel, hardware: renderHardware, system: renderSystem,
+  battery: renderBattery, network: renderNetwork, apps: renderApps,
+  camera: renderCamera, sensors: renderSensors, graphics: renderGraphics, disk: renderDisk
+};
+
+function runTabCmd(id){
+  const out = document.getElementById('out');
+  const statusEl = document.getElementById('status');
+  const dot = document.getElementById('dot');
+  const refreshBtn = document.getElementById('refreshBtn');
+  refreshBtn.classList.add('spin');
+  out.innerHTML = `<div class="muted"><span class="spinner"></span>loading...</div>`;
+
+  if(typeof window.Shizuku === 'undefined'){
+    out.innerHTML = `<div class="err">window.Shizuku not found. Make sure the module is enabled and access mode is set to Full.</div>`;
+    statusEl.textContent = 'not connected';
+    dot.style.background = '#ff6b6b';
+    refreshBtn.classList.remove('spin');
+    return;
+  }
+  let result;
+  try{ result = JSON.parse(window.Shizuku.exec(TAB_CMDS[id])); }
+  catch(e){ out.innerHTML = `<div class="err">exec error: ${esc(e)}</div>`; refreshBtn.classList.remove('spin'); return; }
+  refreshBtn.classList.remove('spin');
+  if(!result.ok){
+    out.innerHTML = `<div class="err">${esc(result.stderr || 'command failed')}</div>`;
+    return;
+  }
+  statusEl.textContent = 'connected — updated just now';
+  dot.style.background = 'var(--accent)';
+  TAB_DATA[id] = parseBlocks(result.stdout || '');
+  renderCurrent();
+}
+
+function renderCurrent(){
+  const out = document.getElementById('out');
+  try{
+    out.innerHTML = RENDERERS[currentTab](TAB_DATA[currentTab] || {});
+  }catch(e){
+    out.innerHTML = `<div class="err">Error: ${esc(e)}</div>`;
+    return;
+  }
+  // retrigger tab entrance animation
+  out.style.animation = 'none';
+  void out.offsetWidth;
+  out.style.animation = '';
+  staggerCards(out);
+  animateRings(out);
+  animateCounters(out);
+}
+
+function ensureTab(id){
+  if(TAB_DATA[id]){ renderCurrent(); return; }
+  runTabCmd(id);
+}
+function refreshCurrent(){ runTabCmd(currentTab); }
+
+function initTabs(){
+  const nav = document.getElementById('tabs');
+  nav.innerHTML = TABS.map(t=>`<button data-id="${t.id}">${t.label}</button>`).join('');
+  nav.querySelectorAll('button').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      if(btn.dataset.id === currentTab) return;
+      currentTab = btn.dataset.id;
+      nav.querySelectorAll('button').forEach(x=>x.classList.toggle('active', x===btn));
+      ensureTab(currentTab);
+    });
+  });
+  nav.querySelector('button').classList.add('active');
+}
+
+initTabs();
+runTabCmd('panel');
+</script>
+</body>
+</html>
