@@ -9,9 +9,9 @@ A lightweight system info dashboard for Shizuku-based ADB module managers — wo
 
 <table>
 <tr>
-<td><img src="screenshots/panel.png" width="120"/></td>
-<td><img src="screenshots/hardware.png" width="120"/></td>
-<td><img src="screenshots/graphics.png" width="120"/></td>
+<td><img src="screenshots/panel.png" width="220"/></td>
+<td><img src="screenshots/hardware.png" width="220"/></td>
+<td><img src="screenshots/graphics.png" width="220"/></td>
 </tr>
 </table>
 
