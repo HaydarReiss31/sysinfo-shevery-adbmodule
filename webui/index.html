@@ -894,6 +894,90 @@ function initTabs(){
   nav.querySelector('button').classList.add('active');
 }
 
+let swipeStartX = 0;
+let swipeStartY = 0;
+let swipeStartTime = 0;
+
+const SWIPE_MIN_DISTANCE = 60;
+const SWIPE_MAX_VERTICAL = 100;
+const SWIPE_MAX_TIME = 700;
+
+function switchTabBySwipe(direction){
+  const currentIndex = TABS.findIndex(t => t.id === currentTab);
+  if(currentIndex === -1) return;
+
+  let nextIndex;
+
+  if(direction === 'left'){
+    nextIndex = currentIndex + 1;
+    if(nextIndex >= TABS.length) nextIndex = 0;
+  }else{
+    nextIndex = currentIndex - 1;
+    if(nextIndex < 0) nextIndex = TABS.length - 1;
+  }
+
+  const nextTab = TABS[nextIndex];
+  if(!nextTab) return;
+
+  currentTab = nextTab.id;
+
+  const nav = document.getElementById('tabs');
+  const buttons = nav.querySelectorAll('button');
+
+  buttons.forEach(btn=>{
+    btn.classList.toggle('active', btn.dataset.id === currentTab);
+  });
+
+  const activeButton = nav.querySelector(
+    `button[data-id="${currentTab}"]`
+  );
+
+  if(activeButton){
+    activeButton.scrollIntoView({
+      behavior:'smooth',
+      block:'nearest',
+      inline:'center'
+    });
+  }
+
+  ensureTab(currentTab);
+}
+
+document.addEventListener('touchstart', function(e){
+  if(!e.touches || e.touches.length !== 1) return;
+
+  swipeStartX = e.touches[0].clientX;
+  swipeStartY = e.touches[0].clientY;
+  swipeStartTime = Date.now();
+}, {passive:true});
+
+document.addEventListener('touchend', function(e){
+  if(!e.changedTouches || e.changedTouches.length !== 1) return;
+
+  const endX = e.changedTouches[0].clientX;
+  const endY = e.changedTouches[0].clientY;
+
+  const deltaX = endX - swipeStartX;
+  const deltaY = endY - swipeStartY;
+  const elapsed = Date.now() - swipeStartTime;
+
+  if(elapsed > SWIPE_MAX_TIME) return;
+  if(Math.abs(deltaY) > SWIPE_MAX_VERTICAL) return;
+  if(Math.abs(deltaX) < SWIPE_MIN_DISTANCE) return;
+
+  const target = e.target;
+
+  if(target.closest && target.closest('#tabs')){
+    return;
+  }
+
+  if(deltaX < 0){
+    switchTabBySwipe('left');
+  }else{
+    switchTabBySwipe('right');
+  }
+}, {passive:true});
+
 initTabs();
 runTabCmd('panel');
 </script>
