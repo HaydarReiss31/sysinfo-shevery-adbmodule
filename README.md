@@ -2,7 +2,7 @@
 # Sys Info — ADB Module
 
 ![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)
-![Version](https://img.shields.io/badge/version-2.0-4fd1c5.svg)
+![Version](https://img.shields.io/badge/version-2.1-4fd1c5.svg)
 
 A lightweight system info dashboard for Shizuku-based ADB module managers — works with [Shevery](https://github.com/HmnDev-Tech/shevery) and [Nightzuku](https://github.com/kerneldroid/Nightzuku/tree/main). Runs entirely through the Shizuku shell bridge — no root required.
 
@@ -46,6 +46,10 @@ Each tab loads its own data on demand (lazy-loaded), so opening the module doesn
 - Some WiFi/network fields may return empty on Safe mode due to permission restrictions.
 
 ## Changelog
+
+### v2.1
+- Redesigned the WebUI in **Material You** (Material 3) style: tonal surface colors, rounded large-shape cards, filled/tonal buttons and chips, system Roboto typography
+- All tabs, parsing logic and animations unchanged — visual-only update
 
 ### v2.0
 - Added **Apps** tab (searchable list, package counts)
