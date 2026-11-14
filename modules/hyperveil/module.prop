@@ -1,6 +1,6 @@
 id=hyperveil
 name=HyperVeil
-version=0.5
+version=0.1
 versionCode=5
 author=HaydarReiss31, ReignReiss31
 description=Unlocks hidden/restricted visual features on HyperOS and MIUI (Advanced Textures, icon animations, home screen label hiding) via ADB/Shizuku.
