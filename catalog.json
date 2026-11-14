@@ -1,0 +1,25 @@
+{
+  "catalogVersion": 1,
+  "modules": [
+    {
+      "id": "sysinfo",
+      "name": "Sys Info",
+      "repo": "HaydarReiss31/shevery-modules",
+      "sourcePath": "modules/sysinfo",
+      "defaultBranch": "main",
+      "description": "Live system dashboard: CPU, RAM, battery, network, display, storage, apps, camera, sensors, OpenGL/Vulkan and disk info",
+      "author": "HaydarReiss31",
+      "releaseTag": null
+    },
+    {
+      "id": "hyperveil",
+      "name": "HyperVeil",
+      "repo": "HaydarReiss31/shevery-modules",
+      "sourcePath": "modules/hyperveil",
+      "defaultBranch": "main",
+      "description": "Unlocks hidden/restricted visual features on HyperOS and MIUI (Advanced Textures, icon animations, home screen label hiding) via ADB/Shizuku.",
+      "author": "HaydarReiss31",
+      "releaseTag": null
+    }
+  ]
+}

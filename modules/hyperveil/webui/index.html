@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HyperVeil</title>
+<style>
+  :root{
+    --bg:#f2f3f5; --card:#ffffff; --text:#000000; --sub:#8b8b90;
+    --border:#ededf0;
+    --on:#3482ff; --off:#e5e5e8; --warn:#ff9500; --danger:#ff3b30;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#000000; --card:#1c1c1e; --text:#ffffff; --sub:#8e8e93;
+      --border:#2c2c2e; --off:#3a3a3c;
+    }
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;}
+  body{
+    padding:20px 16px 28px; background:var(--bg); color:var(--text);
+    font-family:"MiSans","MiSans VF",-apple-system,"Segoe UI",Roboto,system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    letter-spacing:-0.01em;
+  }
+  
+  /* Top Bar & Header */
+  .top-bar{
+    display:flex; align-items:center; justify-content:space-between; margin:0 0 4px;
+  }
+  /* Başlık inceltildi (font-weight: 300) */
+  h1{font-size:28px; font-weight:300; letter-spacing:-0.5px; margin:0;}
+  .sub{color:var(--sub); font-size:13px; margin:0 0 20px; line-height:1.45; font-weight:400;}
+  
+  /* Restart Icon Button */
+  .icon-btn{
+    background:var(--card); border:none; border-radius:50%;
+    width:44px; height:44px; display:flex; align-items:center; justify-content:center;
+    box-shadow:0 2px 8px rgba(0,0,0,.05); cursor:pointer;
+    transition:transform .1s ease, opacity .1s ease; color:var(--text);
+  }
+  .icon-btn:active{transform:scale(.92); opacity:.8;}
+  .icon-btn svg{width:22px; height:22px; fill:currentColor;}
+
+  /* Cards */
+  .card{
+    background:var(--card); border:none; border-radius:20px;
+    padding:18px 18px 16px; margin-bottom:12px;
+    box-shadow:0 1px 2px rgba(0,0,0,.03), 0 4px 14px rgba(0,0,0,.03);
+  }
+  .row{display:flex; align-items:center; justify-content:space-between; gap:14px;}
+  .title{font-size:16px; font-weight:600; margin:0 0 4px; letter-spacing:-0.2px;}
+  .desc{font-size:12.5px; color:var(--sub); margin:0; line-height:1.45; font-weight:400;}
+  .cmdline{
+    font-family:ui-monospace,"SF Mono",Menlo,monospace; font-size:10.5px; color:var(--sub);
+    background:rgba(128,128,128,.09); border-radius:10px; padding:8px 10px;
+    margin-top:12px; word-break:break-all; letter-spacing:0; line-height:1.5;
+  }
+  
+  /* Switch */
+  .switch{position:relative; width:50px; height:30px; flex:none;}
+  .switch input{display:none;}
+  .slider{
+    position:absolute; inset:0; background:var(--off);
+    border-radius:15px; transition:background .25s cubic-bezier(.4,0,.2,1);
+    cursor:pointer;
+  }
+  .slider::before{
+    content:""; position:absolute; width:26px; height:26px; left:2px; top:2px;
+    background:#fff; border-radius:50%;
+    box-shadow:0 2px 5px rgba(0,0,0,.18), 0 1px 1px rgba(0,0,0,.06);
+    transition:transform .25s cubic-bezier(.4,0,.2,1);
+  }
+  input:checked + .slider{background:var(--on);}
+  input:checked + .slider::before{transform:translateX(20px);}
+  input:disabled + .slider{opacity:.4; cursor:default;}
+  
+  .status{font-size:12px; margin-top:10px; min-height:16px; font-weight:500;}
+  .status.ok{color:var(--on);}
+  .status.err{color:var(--danger);}
+  .status.busy{color:var(--warn);}
+  .note{
+    font-size:12px; color:#a86400; background:rgba(255,149,0,.11);
+    padding:10px 12px; border-radius:12px; margin-top:12px;
+    line-height:1.5; font-weight:500; border:none;
+  }
+  @media (prefers-color-scheme: dark){
+    .note{color:#ffb84d; background:rgba(255,149,0,.14);}
+  }
+  .refresh{
+    display:block; width:100%; margin-top:8px; padding:14px;
+    border:none; border-radius:16px; background:var(--card);
+    color:var(--on); font-size:14.5px; font-weight:600;
+    font-family:inherit; letter-spacing:-0.1px; cursor:pointer;
+    box-shadow:0 1px 2px rgba(0,0,0,.03), 0 4px 14px rgba(0,0,0,.03);
+    transition:transform .1s ease, opacity .1s ease;
+  }
+  .refresh:active{transform:scale(.98); opacity:.85;}
+
+  /* Modal (HyperCeiler style) */
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(0,0,0,.6);
+    display:none; align-items:center; justify-content:center;
+    z-index:1000; padding:20px; backdrop-filter: blur(2px);
+  }
+  .modal-overlay.show{display:flex;}
+  .modal{
+    background:var(--card); border-radius:28px;
+    width:100%; max-width:340px; padding:24px;
+    box-shadow:0 10px 40px rgba(0,0,0,.3);
+  }
+  .modal-title{
+    font-size:18px; font-weight:600; margin:0 0 20px; color:var(--text); text-align:center;
+  }
+  .modal-list{
+    margin-bottom:24px;
+  }
+  /* Radio Button Selection Style */
+  .radio-item{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:16px 4px; cursor:pointer; font-size:16px; font-weight:500;
+  }
+  .radio-item input[type="radio"]{display:none;}
+  .radio-circle{
+    width:24px; height:24px; border-radius:50%;
+    background:var(--off); transition:background .2s;
+    position:relative;
+  }
+  .radio-item input[type="radio"]:checked + .radio-circle{
+    background:var(--on);
+  }
+  .radio-item input[type="radio"]:checked + .radio-circle::after{
+    content:""; position:absolute; top:50%; left:50%;
+    transform:translate(-50%, -50%); width:8px; height:8px;
+    background:#fff; border-radius:50%;
+  }
+  
+  .modal-actions{
+    display:flex; gap:12px; justify-content:space-between;
+  }
+  .modal-actions button{
+    flex:1; padding:14px; border:none; border-radius:20px;
+    font-size:15px; font-weight:600; font-family:inherit;
+    cursor:pointer; transition:transform .1s ease, opacity .1s ease;
+  }
+  .modal-actions button:active{transform:scale(.96);}
+  .btn-cancel{background:var(--off); color:var(--text);}
+  .btn-confirm{background:var(--on); color:#fff;}
+  .btn-confirm:disabled{opacity:0.6;}
+</style>
+</head>
+<body>
+
+<!-- Top Bar with Restart Icon -->
+<div class="top-bar">
+  <h1>HyperVeil</h1>
+  <button class="icon-btn" onclick="showRestartModal()" title="Restart Target Apps">
+    <!-- Restart Icon (SVG) -->
+    <svg viewBox="0 0 24 24">
+      <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+    </svg>
+  </button>
+</div>
+<p class="sub">Unlock restricted visual features on HyperOS/MIUI via ADB/Shizuku.</p>
+
+<!-- 1. Advanced Textures -->
+<div class="card">
+  <div class="row">
+    <div>
+      <p class="title">Advanced Textures / Blur</p>
+      <p class="desc">Force-enables the Advanced Textures option in Settings &gt; Display, along with background blur support.</p>
+    </div>
+    <label class="switch">
+      <input type="checkbox" id="sw-textures" onchange="toggle('textures', this)">
+      <span class="slider"></span>
+    </label>
+  </div>
+  <div class="cmdline">service call miui.mqsas.IMQSNative ... setprop persist.sys.background_blur_supported / advanced_visual_release / computility.cpulevel+gpulevel</div>
+  <div class="note">May cause visual glitches/lag on some devices (especially lower-end models). Turning it off restores your original values.</div>
+  <div class="status" id="st-textures"></div>
+</div>
+
+<!-- 2. Icon animations -->
+<div class="card">
+  <div class="row">
+    <div>
+      <p class="title">Icon Animations</p>
+      <p class="desc">Raises the open/close animation level for app icons (v:1,c:3,g:3).</p>
+    </div>
+    <label class="switch">
+      <input type="checkbox" id="sw-iconanim" onchange="toggle('iconanim', this)">
+      <span class="slider"></span>
+    </label>
+  </div>
+  <div class="cmdline">settings put system deviceLevelList v:1,c:3,g:3</div>
+  <div class="status" id="st-iconanim"></div>
+</div>
+
+<!-- 3. Hide home screen app names -->
+<div class="card">
+  <div class="row">
+    <div>
+      <p class="title">Hide Home Screen App Labels</p>
+      <p class="desc">Hides the text labels under icons on the home screen.</p>
+    </div>
+    <label class="switch">
+      <input type="checkbox" id="sw-noword" onchange="toggle('noword', this)">
+      <span class="slider"></span>
+    </label>
+  </div>
+  <div class="cmdline">settings put system miui_home_no_word_model 1</div>
+  <div class="status" id="st-noword"></div>
+</div>
+
+<!-- 4. Show touches -->
+<div class="card">
+  <div class="row">
+    <div>
+      <p class="title">Show Touches</p>
+      <p class="desc">Shows a visual dot wherever you touch the screen. Handy for screen recordings and demos.</p>
+    </div>
+    <label class="switch">
+      <input type="checkbox" id="sw-touches" onchange="toggle('touches', this)">
+      <span class="slider"></span>
+    </label>
+  </div>
+  <div class="cmdline">settings put system show_touches 1</div>
+  <div class="status" id="st-touches"></div>
+</div>
+
+<!-- 5. Stay awake while charging -->
+<div class="card">
+  <div class="row">
+    <div>
+      <p class="title">Stay Awake While Charging</p>
+      <p class="desc">Keeps the screen on whenever the phone is plugged in (AC, USB or wireless). Useful for dashboards, navigation and long installs.</p>
+    </div>
+    <label class="switch">
+      <input type="checkbox" id="sw-stayawake" onchange="toggle('stayawake', this)">
+      <span class="slider"></span>
+    </label>
+  </div>
+  <div class="cmdline">settings put global stay_on_while_plugged_in 7</div>
+  <div class="status" id="st-stayawake"></div>
+</div>
+
+<!-- 6. Private DNS (AdGuard) -->
+<div class="card">
+  <div class="row">
+    <div>
+      <p class="title">Ad-Blocking Private DNS</p>
+      <p class="desc">Sets system-wide Private DNS to AdGuard (dns.adguard-dns.com) to block ads and trackers in every app, no VPN needed.</p>
+    </div>
+    <label class="switch">
+      <input type="checkbox" id="sw-dns" onchange="toggle('dns', this)">
+      <span class="slider"></span>
+    </label>
+  </div>
+  <div class="cmdline">settings put global private_dns_specifier dns.adguard-dns.com; private_dns_mode hostname</div>
+  <div class="note">Turning it off sets Private DNS back to Automatic. Any custom DNS you had set before will not be restored.</div>
+  <div class="status" id="st-dns"></div>
+</div>
+
+<!-- 7. Force resizable apps -->
+<div class="card">
+  <div class="row">
+    <div>
+      <p class="title">Force Resizable Apps</p>
+      <p class="desc">Lets apps that normally refuse split-screen or freeform windows be resized anyway.</p>
+    </div>
+    <label class="switch">
+      <input type="checkbox" id="sw-resizable" onchange="toggle('resizable', this)">
+      <span class="slider"></span>
+    </label>
+  </div>
+  <div class="cmdline">settings put global force_resizable_activities 1</div>
+  <div class="note">Needs a reboot to take effect. Some apps may glitch or crash when forced to resize.</div>
+  <div class="status" id="st-resizable"></div>
+</div>
+
+<button class="refresh" onclick="refreshAll()">Refresh status</button>
+
+<!-- Restart Selection Modal (HyperCeiler Style) -->
+<div class="modal-overlay" id="restart-modal">
+  <div class="modal">
+    <p class="modal-title">Restart Target App</p>
+    
+    <div class="modal-list">
+      <label class="radio-item">
+        <span>System UI</span>
+        <input type="radio" name="restart-target" value="com.android.systemui" checked>
+        <div class="radio-circle"></div>
+      </label>
+      
+      <label class="radio-item">
+        <span>System Launcher</span>
+        <input type="radio" name="restart-target" value="com.miui.home">
+        <div class="radio-circle"></div>
+      </label>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="hideRestartModal()">Cancel</button>
+      <button class="btn-confirm" id="btn-confirm-restart" onclick="executeForceStop()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const BAK = '/data/local/tmp/hyperveil_textures.bak';
+const CLEAN_LOG = 'rm -f /storage/emulated/0/log.txt';
+const TEX_PROPS = ['persist.sys.computility.cpulevel','persist.sys.computility.gpulevel','persist.sys.advanced_visual_release','persist.sys.background_blur_supported'];
+const TEX_ON  = ['6','6','3','true'];
+const TEX_DEF = ['0','0','0','false'];
+const mqsas = (k, v) => `service call miui.mqsas.IMQSNative 21 i32 1 s16 "setprop" i32 1 s16 "${k} ${v}" s16 "/storage/emulated/0/log.txt" i32 600`;
+let texSupported = true;
+
+const FEATURES = {
+  textures: {
+    on: () => {
+      const bak = `[ -f ${BAK} ] || (${TEX_PROPS.map(k => 'getprop ' + k).join('; ')}) > ${BAK}`;
+      const sets = TEX_PROPS.map((k, n) => mqsas(k, TEX_ON[n]));
+      return [bak, ...sets, CLEAN_LOG].join(' && ');
+    },
+    off: () => {
+      let saved = [];
+      try {
+        const r = run(`cat ${BAK} 2>/dev/null`);
+        if (r.ok) saved = (r.stdout || '').split('\n');
+      } catch (e) {}
+      const sets = TEX_PROPS.map((k, n) => mqsas(k, (saved[n] || '').trim() || TEX_DEF[n]));
+      return [...sets, `rm -f ${BAK}`, CLEAN_LOG].join(' && ');
+    },
+    check: 'getprop persist.sys.background_blur_supported',
+    isOn: (out) => out.trim() === 'true'
+  },
+  iconanim: {
+    on: 'settings put system deviceLevelList v:1,c:3,g:3',
+    off: 'settings delete system deviceLevelList',
+    check: 'settings get system deviceLevelList',
+    isOn: (out) => out.trim().startsWith('v:1')
+  },
+  touches: {
+    on: 'settings put system show_touches 1',
+    off: 'settings put system show_touches 0',
+    check: 'settings get system show_touches',
+    isOn: (out) => out.trim() === '1'
+  },
+  stayawake: {
+    on: 'settings put global stay_on_while_plugged_in 7',
+    off: 'settings put global stay_on_while_plugged_in 0',
+    check: 'settings get global stay_on_while_plugged_in',
+    isOn: (out) => parseInt(out.trim(), 10) > 0
+  },
+  dns: {
+    on: 'settings put global private_dns_specifier dns.adguard-dns.com && settings put global private_dns_mode hostname',
+    off: 'settings put global private_dns_mode opportunistic',
+    check: 'settings get global private_dns_mode',
+    isOn: (out) => out.trim() === 'hostname'
+  },
+  resizable: {
+    on: 'settings put global force_resizable_activities 1',
+    off: 'settings put global force_resizable_activities 0',
+    check: 'settings get global force_resizable_activities',
+    isOn: (out) => out.trim() === '1'
+  },
+  noword: {
+    on: 'settings put system miui_home_no_word_model 1',
+    off: 'settings put system miui_home_no_word_model 0',
+    check: 'settings get system miui_home_no_word_model',
+    isOn: (out) => out.trim() === '1'
+  }
+};
+
+function setStatus(key, text, cls){
+  const el = document.getElementById('st-' + key);
+  if (!el) return;
+  el.textContent = text;
+  el.className = 'status' + (cls ? ' ' + cls : '');
+}
+
+function run(cmd){
+  const resJson = window.Shizuku.exec(cmd);
+  return JSON.parse(resJson);
+}
+
+function toggle(key, checkbox){
+  checkbox.disabled = true;
+  setStatus(key, 'Applying...', 'busy');
+  const f = FEATURES[key];
+  const want = checkbox.checked;
+  const pick = want ? f.on : f.off;
+  const revert = (msg) => { setStatus(key, msg, 'err'); checkbox.checked = !want; };
+  try{
+    const res = run(typeof pick === 'function' ? pick() : pick);
+    if(!res.ok){
+      revert('Error: ' + (res.stderr || 'unknown (exit ' + res.exitCode + ')'));
+    } else {
+      const chk = run(f.check);
+      if(chk.ok && f.isOn(chk.stdout || '') === want){
+        setStatus(key, want ? 'On' : 'Off', 'ok');
+      } else {
+        revert('Command ran but the value did not change (not supported on this device?)');
+      }
+    }
+  } catch(e){
+    revert('Error: ' + e);
+  }
+  checkbox.disabled = false;
+}
+
+function refreshOne(key){
+  const f = FEATURES[key];
+  const checkbox = document.getElementById('sw-' + key);
+  if (!checkbox) return;
+  try{
+    const res = run(f.check);
+    if(res.ok){
+      const isOn = f.isOn(res.stdout || '');
+      checkbox.checked = isOn;
+      setStatus(key, isOn ? 'On' : 'Off', isOn ? 'ok' : '');
+    } else {
+      setStatus(key, 'Could not read status', 'err');
+    }
+  } catch(e){
+    setStatus(key, 'Could not read status: ' + e, 'err');
+  }
+}
+
+function refreshAll(){
+  try{
+    const r = run('service list | grep -c mqsas');
+    texSupported = !(r.ok && (r.stdout || '').trim() === '0');
+  } catch(e){ texSupported = true; }
+  const tex = document.getElementById('sw-textures');
+  if(!texSupported){
+    tex.disabled = true; tex.checked = false;
+    setStatus('textures', 'Not supported: miui.mqsas service not found on this device', 'err');
+  } else {
+    tex.disabled = false;
+    refreshOne('textures');
+  }
+  Object.keys(FEATURES).filter(k => k !== 'textures').forEach(refreshOne);
+}
+
+/* --- Restart Target App Logic --- */
+function showRestartModal(){
+  document.getElementById('restart-modal').classList.add('show');
+}
+
+function hideRestartModal(){
+  document.getElementById('restart-modal').classList.remove('show');
+}
+
+function executeForceStop(){
+  hideRestartModal();
+  const btn = document.getElementById('btn-confirm-restart');
+  
+  // Get selected package
+  const selectedTarget = document.querySelector('input[name="restart-target"]:checked').value;
+  
+  btn.disabled = true;
+  btn.textContent = 'Restarting...';
+
+  // Force stop ONLY the selected package
+  const cmd = `am force-stop ${selectedTarget}`;
+  
+  try {
+    const res = run(cmd);
+    if (res.ok) {
+      // It usually disconnects instantly, reset button after a short delay
+      setTimeout(() => {
+        btn.textContent = 'Confirm';
+        btn.disabled = false;
+      }, 2500);
+    } else {
+      alert('Error: ' + (res.stderr || 'Unknown error'));
+      btn.textContent = 'Confirm';
+      btn.disabled = false;
+    }
+  } catch(e) {
+    alert('Error: ' + e);
+    btn.textContent = 'Confirm';
+    btn.disabled = false;
+  }
+}
+
+window.addEventListener('DOMContentLoaded', refreshAll);
+</script>
+</body>
+</html>
