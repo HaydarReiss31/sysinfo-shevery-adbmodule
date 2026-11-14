@@ -9,7 +9,7 @@
       "defaultBranch": "main",
       "description": "Live system dashboard: CPU, RAM, battery, network, display, storage, apps, camera, sensors, OpenGL/Vulkan and disk info",
       "author": "HaydarReiss31",
-      "releaseTag": null
+      "releaseTag": v2.2
     },
     {
       "id": "hyperveil",
